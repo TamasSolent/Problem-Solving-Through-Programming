@@ -77,6 +77,35 @@ def plot_average_rating_by_month(
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
     plt.show()
+
+
+def plot_avg_rating_by_calendar_month(
+    branch: str,
+    avg_by_month: Dict[int, float],
+) -> None:
+    """Plot a bar chart of average rating per calendar month (Jan–Dec)."""
+
+    if not _check_matplotlib():
+        return
+
+    if not avg_by_month:
+        print("No data available to plot.")
+        return
+
+    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    months_sorted = [m for m in range(1, 13) if m in avg_by_month]
+    labels = [month_names[m - 1] for m in months_sorted]
+    averages = [avg_by_month[m] for m in months_sorted]
+
+    plt.figure(figsize=(9, 4))
+    plt.bar(labels, averages, color="mediumpurple")
+    plt.ylabel("Average Rating")
+    plt.xlabel("Month")
+    plt.title(f"Average Rating by Month (Years Combined) – {branch}")
+    plt.tight_layout()
+    plt.show()
 def plot_top_locations_for_branch(
     branch: str,
     locations: Iterable[Tuple[str, int]],
@@ -103,8 +132,41 @@ def plot_top_locations_for_branch(
     plt.show()
 
 
+def plot_top_locations_avg_rating(
+    branch: str,
+    avg_by_location: Dict[str, float],
+    limit: int = 10,
+) -> None:
+    """Plot bar chart of top N locations by average rating for a park."""
+
+    if not _check_matplotlib():
+        return
+
+    if not avg_by_location:
+        print("No data available to plot.")
+        return
+
+    # sort by average rating (descending), then location name
+    sorted_items = sorted(
+        avg_by_location.items(), key=lambda item: (-item[1], item[0])
+    )[:limit]
+
+    labels = [loc for loc, _ in sorted_items]
+    averages = [avg for _, avg in sorted_items]
+
+    plt.figure(figsize=(9, 4))
+    plt.bar(labels, averages, color="seagreen")
+    plt.ylabel("Average Rating")
+    plt.title(f"Top {len(labels)} Locations by Average Rating – {branch}")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.show()
+
+
 __all__ = [
     "plot_average_rating_by_branch",
     "plot_average_rating_by_month",
     "plot_top_locations_for_branch",
+    "plot_top_locations_avg_rating",
+    "plot_avg_rating_by_calendar_month",
 ]

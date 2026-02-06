@@ -31,23 +31,54 @@ def print_goodbye() -> None:
 
 
 def get_main_menu_choice() -> str:
-    """Show the main menu and return the user's chosen option as a string."""
+    """Display the main menu and return the user's choice (A, B or X)."""
 
     print()
-    print("Main menu")
-    print("-" * 60)
-    print("1. Show overall dataset summary")
-    print("2. Show average rating by branch")
-    print("3. Show average rating by month for a branch")
-    print("4. Show top reviewer locations for a branch")
-    print("5. Plot average rating by branch")
-    print("6. Plot average rating by month for a branch")
-    print("7. Plot top reviewer locations for a branch")
-    print("0. Exit")
-    print()
+    print("Please enter the letter which corresponds with your desired menu choice:")
+    print("[A] View Data")
+    print("[B] Visualise Data")
+    print("[X] Exit")
 
-    choice = input("Please choose an option (0-7): ").strip()
+    choice = input().strip().upper()
+
+    # Confirm the user's choice in line with the brief's example.
+    if choice == "A":
+        print("You have chosen option A - View Data")
+    elif choice == "B":
+        print("You have chosen option B - Visualise Data")
+    elif choice == "X":
+        print("You have chosen option X - Exit")
+    else:
+        print("That is not a valid menu option.")
+
     return choice
+
+
+def get_view_data_menu_choice() -> str:
+    """Sub-menu for 'View Data' (main menu option A)."""
+
+    print()
+    print("Please enter one of the following options:")
+    print("[A] View Reviews by Park")
+    print("[B] Number of Reviews by Park and Reviewer Location")
+    print("[C] Average Score per year by Park")
+    print("[D] Average Score per Park by Reviewer Location")
+
+    sub_choice = input().strip().upper()
+    return sub_choice
+
+
+def get_visualise_data_menu_choice() -> str:
+    """Sub-menu for 'Visualise Data' (main menu option B)."""
+
+    print()
+    print("Please enter one of the following options:")
+    print("[A] Most reviewed Parks")
+    print("[B] Park Ranking by Nationality")
+    print("[C] Most Popular Month by Park")
+
+    sub_choice = input().strip().upper()
+    return sub_choice
 
 
 def show_error(message: str) -> None:
@@ -235,10 +266,85 @@ def show_top_locations(
 
     if not found_any:
         print("No location data available.")
+
+
+def show_review_counts_by_park_and_location(
+    counts: Dict[str, Dict[str, int]],
+) -> None:
+    """Display number of reviews by park and reviewer location."""
+
+    print()
+    print("Number of reviews by Park and Reviewer Location")
+    print("-" * 60)
+
+    if not counts:
+        print("No review counts available.")
+        return
+
+    for branch in sorted(counts.keys()):
+        print(f"\nPark: {branch}")
+        print("Location".ljust(30), "Count")
+        print("-" * 45)
+        branch_counts = counts[branch]
+        for location, count in sorted(branch_counts.items(), key=lambda item: (-item[1], item[0])):
+            print(f"{location:30s} {count:5d}")
+
+
+def show_average_score_per_year_by_park(
+    averages: Dict[str, Dict[int, float]],
+) -> None:
+    """Display average score per year for each park."""
+
+    print()
+    print("Average Score per year by Park")
+    print("-" * 60)
+
+    if not averages:
+        print("No average score data available.")
+        return
+
+    for branch in sorted(averages.keys()):
+        print(f"\nPark: {branch}")
+        print("Year".ljust(10), "Average Rating")
+        print("-" * 30)
+        year_map = averages[branch]
+        for year in sorted(year_map.keys()):
+            print(f"{year:<10d} {year_map[year]:.2f}")
+
+
+def show_average_score_per_park_by_reviewer_location(
+    averages: Dict[str, Dict[str, float]],
+) -> None:
+    """Display average score per park by reviewer location in a single table."""
+
+    print()
+    print("Average Score per Park by Reviewer Location")
+    print("-" * 80)
+
+    if not averages:
+        print("No data available.")
+        return
+
+    # Single table header so it's easier to screenshot.
+    print("Park".ljust(30), "Location".ljust(30), "Average Rating")
+    print("-" * 80)
+
+    rows = []
+    for branch, loc_map in averages.items():
+        for location, avg in loc_map.items():
+            rows.append((branch, location, avg))
+
+    # Sort by park then location for a stable, readable order.
+    for branch, location, avg in sorted(rows, key=lambda item: (item[0], item[1])):
+        print(f"{branch:30s} {location:30s} {avg:5.2f}")
+
+
 __all__ = [
     "print_welcome",
     "print_goodbye",
     "get_main_menu_choice",
+    "get_view_data_menu_choice",
+    "get_visualise_data_menu_choice",
     "show_error",
     "choose_branch",
     "choose_year_month",
@@ -247,4 +353,7 @@ __all__ = [
     "show_average_ratings_by_branch",
     "show_average_ratings_by_month",
     "show_top_locations",
+    "show_review_counts_by_park_and_location",
+    "show_average_score_per_year_by_park",
+    "show_average_score_per_park_by_reviewer_location",
 ]

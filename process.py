@@ -187,6 +187,134 @@ def top_locations_for_branch(
     return counter.most_common(limit)
 
 
+def review_counts_by_park_and_location(
+    reviews: Sequence[Review],
+) -> Dict[str, Dict[str, int]]:
+    """Count number of reviews for each (park, reviewer location) pair.
+
+    Returns a nested dictionary of the form:
+
+        {branch: {location: count, ...}, ...}
+
+    which is easy for the TUI to display.
+    """
+
+    counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))  # type: ignore[assignment]
+
+    for review in reviews:
+        counts[review.branch][review.reviewer_location] += 1
+
+    # Convert inner defaultdicts to plain dicts for a cleaner API.
+    return {branch: dict(loc_counts) for branch, loc_counts in counts.items()}
+
+
+def average_score_per_year_by_park(
+    reviews: Sequence[Review],
+) -> Dict[str, Dict[int, float]]:
+    """Compute average rating for each park per year.
+
+    Returns a nested dictionary of the form:
+
+        {branch: {year: average_rating, ...}, ...}
+    """
+
+    # key: (branch, year) -> (total_rating, count)
+    totals: Dict[Tuple[str, int], int] = defaultdict(int)
+    counts: Dict[Tuple[str, int], int] = defaultdict(int)
+
+    for review in reviews:
+        key = (review.branch, review.year)
+        totals[key] += review.rating
+        counts[key] += 1
+
+    result: Dict[str, Dict[int, float]] = defaultdict(dict)  # type: ignore[assignment]
+    for (branch, year), total in totals.items():
+        count = counts[(branch, year)]
+        avg = round(total / count, 2) if count else 0.0
+        result[branch][year] = avg
+
+    return dict(result)
+
+
+def average_rating_by_location_for_branch(
+    reviews: Sequence[Review],
+    branch: str,
+) -> Dict[str, float]:
+    """Average rating for each reviewer location for a given park/branch."""
+
+    totals: Dict[str, int] = defaultdict(int)
+    counts: Dict[str, int] = defaultdict(int)
+
+    for review in reviews:
+        if review.branch != branch:
+            continue
+        loc = review.reviewer_location
+        totals[loc] += review.rating
+        counts[loc] += 1
+
+    averages: Dict[str, float] = {}
+    for loc, total in totals.items():
+        count = counts[loc]
+        if count:
+            averages[loc] = round(total / count, 2)
+
+    return averages
+
+
+def average_rating_by_calendar_month_for_branch(
+    reviews: Sequence[Review],
+    branch: str,
+) -> Dict[int, float]:
+    """Average rating per calendar month (1–12) for a given park, years merged.
+
+    For example, May 2018 and May 2019 are both treated as \"May\".
+    """
+
+    totals: Dict[int, int] = defaultdict(int)
+    counts: Dict[int, int] = defaultdict(int)
+
+    for review in reviews:
+        if review.branch != branch:
+            continue
+        month = review.month
+        totals[month] += review.rating
+        counts[month] += 1
+
+    averages: Dict[int, float] = {}
+    for month in range(1, 13):
+        if counts[month]:
+            averages[month] = round(totals[month] / counts[month], 2)
+
+    return averages
+
+
+def average_score_per_park_by_reviewer_location(
+    reviews: Sequence[Review],
+) -> Dict[str, Dict[str, float]]:
+    """Average score per park by reviewer location.
+
+    Returns a nested dictionary of the form:
+
+        {branch: {location: average_rating, ...}, ...}
+    """
+
+    totals: Dict[Tuple[str, str], int] = defaultdict(int)
+    counts: Dict[Tuple[str, str], int] = defaultdict(int)
+
+    for review in reviews:
+        key = (review.branch, review.reviewer_location)
+        totals[key] += review.rating
+        counts[key] += 1
+
+    result: Dict[str, Dict[str, float]] = defaultdict(dict)  # type: ignore[assignment]
+    for (branch, location), total in totals.items():
+        count = counts[(branch, location)]
+        avg = round(total / count, 2) if count else 0.0
+        result[branch][location] = avg
+
+    return dict(result)
+
+
 __all__ = [
     "Review",
     "load_reviews",
@@ -194,4 +322,9 @@ __all__ = [
     "average_rating_by_branch",
     "average_rating_by_month",
     "top_locations_for_branch",
+    "review_counts_by_park_and_location",
+    "average_score_per_year_by_park",
+    "average_rating_by_location_for_branch",
+    "average_rating_by_calendar_month_for_branch",
+    "average_score_per_park_by_reviewer_location",
 ]

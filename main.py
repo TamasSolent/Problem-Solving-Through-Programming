@@ -18,24 +18,35 @@ from process import (
     average_rating_by_branch,
     average_rating_by_month,
     top_locations_for_branch,
+    review_counts_by_park_and_location,
+    average_score_per_year_by_park,
+    average_rating_by_location_for_branch,
+    average_rating_by_calendar_month_for_branch,
+    average_score_per_park_by_reviewer_location,
 )
 from tui import (
     print_welcome,
     print_goodbye,
     get_main_menu_choice,
+    get_view_data_menu_choice,
+    get_visualise_data_menu_choice,
     show_summary,
     choose_branch,
-    choose_year_month,
     choose_top_n,
     show_average_ratings_by_branch,
     show_average_ratings_by_month,
     show_top_locations,
+    show_review_counts_by_park_and_location,
+    show_average_score_per_year_by_park,
+    show_average_score_per_park_by_reviewer_location,
     show_error,
 )
 from visual import (
     plot_average_rating_by_branch,
     plot_average_rating_by_month,
     plot_top_locations_for_branch,
+    plot_top_locations_avg_rating,
+    plot_avg_rating_by_calendar_month,
 )
 
 
@@ -61,86 +72,79 @@ def run() -> None:
     print_welcome()
 
     while True:
-        choice = get_main_menu_choice()
+        main_choice = get_main_menu_choice()
 
-        if choice == "1":
-            summary = summarise_reviews(reviews)
-            show_summary(summary)
+        if main_choice == "A":
+            # View Data sub-menu
+            view_choice = get_view_data_menu_choice()
 
-        elif choice == "2":
-            avg_by_branch = average_rating_by_branch(reviews)
-            show_average_ratings_by_branch(avg_by_branch)
+            if view_choice == "A":
+                # [A] View Reviews by Park – here we show average ratings by branch.
+                avg_by_branch = average_rating_by_branch(reviews)
+                show_average_ratings_by_branch(avg_by_branch)
 
-        elif choice == "3":
-            branch = choose_branch(branches)
-            if branch is None:
-                continue
+            elif view_choice == "B":
+                # [B] Number of Reviews by Park and Reviewer Location
+                counts = review_counts_by_park_and_location(reviews)
+                show_review_counts_by_park_and_location(counts)
 
-            avg_by_month = average_rating_by_month(reviews, branch)
-            if not avg_by_month:
-                show_error("No data available for that branch.")
-                continue
+            elif view_choice == "C":
+                # [C] Average Score per year by Park
+                averages = average_score_per_year_by_park(reviews)
+                show_average_score_per_year_by_park(averages)
 
-            show_average_ratings_by_month(branch, avg_by_month)
+            elif view_choice == "D":
+                # [D] Average Score per Park by Reviewer Location
+                averages = average_score_per_park_by_reviewer_location(reviews)
+                show_average_score_per_park_by_reviewer_location(averages)
 
-        elif choice == "4":
-            branch = choose_branch(branches)
-            if branch is None:
-                continue
+            else:
+                show_error("Unknown View Data menu option.")
 
-            n_top = choose_top_n()
-            if n_top is None:
-                continue
+        elif main_choice == "B":
+            # Visualise Data sub-menu
+            vis_choice = get_visualise_data_menu_choice()
 
-            locations = top_locations_for_branch(reviews, branch, limit=n_top)
-            if not locations:
-                show_error("No location data available for that branch.")
-                continue
+            if vis_choice == "A":
+                # [A] Most reviewed Parks – visualise ratings by branch.
+                avg_by_branch = average_rating_by_branch(reviews)
+                plot_average_rating_by_branch(avg_by_branch)
 
-            show_top_locations(branch, locations)
+            elif vis_choice == "B":
+                # [B] Park Ranking by Nationality – choose a park and
+                # show top 10 locations by average rating.
+                branch = choose_branch(branches)
+                if branch is not None:
+                    avg_by_location = average_rating_by_location_for_branch(
+                        reviews, branch
+                    )
+                    if avg_by_location:
+                        plot_top_locations_avg_rating(branch, avg_by_location, limit=10)
+                    else:
+                        show_error("No data available for that park.")
 
-        elif choice == "5":
-            # Visualise average rating per branch.
-            avg_by_branch = average_rating_by_branch(reviews)
-            plot_average_rating_by_branch(avg_by_branch)
+            elif vis_choice == "C":
+                # [C] Most Popular Month by Park – choose a park and
+                # show average rating per calendar month (years combined).
+                branch = choose_branch(branches)
+                if branch is not None:
+                    avg_by_month = average_rating_by_calendar_month_for_branch(
+                        reviews, branch
+                    )
+                    if avg_by_month:
+                        plot_avg_rating_by_calendar_month(branch, avg_by_month)
+                    else:
+                        show_error("No data available for that branch.")
 
-        elif choice == "6":
-            # Visualise average rating per month for a chosen branch.
-            branch = choose_branch(branches)
-            if branch is None:
-                continue
+            else:
+                show_error("Unknown Visualise Data menu option.")
 
-            avg_by_month = average_rating_by_month(reviews, branch)
-            if not avg_by_month:
-                show_error("No data available for that branch.")
-                continue
-
-            plot_average_rating_by_month(branch, avg_by_month)
-
-        elif choice == "7":
-            # Visualise top locations for a branch.
-            branch = choose_branch(branches)
-            if branch is None:
-                continue
-
-            n_top = choose_top_n()
-            if n_top is None:
-                continue
-
-            locations = top_locations_for_branch(reviews, branch, limit=n_top)
-            if not locations:
-                show_error("No location data available for that branch.")
-                continue
-
-            plot_top_locations_for_branch(branch, locations)
-
-        elif choice == "0":
+        elif main_choice == "X":
             print_goodbye()
             break
 
         else:
-            # This should not normally happen as the TUI validates options,
-            # but we guard against it defensively.
+            # user typed something other than A, B or X
             show_error("Unknown menu option selected.")
 
 
